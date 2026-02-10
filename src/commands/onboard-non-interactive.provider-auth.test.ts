@@ -231,6 +231,37 @@ describe("onboard (non-interactive): provider auth", () => {
     });
   }, 60_000);
 
+  it("stores Azure AI API key and sets default model", async () => {
+    await withOnboardEnv("openclaw-onboard-azure-ai-", async ({ configPath, runtime }) => {
+      await runNonInteractive(
+        {
+          nonInteractive: true,
+          authChoice: "azure-ai-api-key",
+          azureAiApiKey: "azure-ai-test-key",
+          skipHealth: true,
+          skipChannels: true,
+          skipSkills: true,
+          json: true,
+        },
+        runtime,
+      );
+
+      const cfg = await readJsonFile<{
+        auth?: { profiles?: Record<string, { provider?: string; mode?: string }> };
+        agents?: { defaults?: { model?: { primary?: string } } };
+      }>(configPath);
+
+      expect(cfg.auth?.profiles?.["azure-ai:default"]?.provider).toBe("azure-ai");
+      expect(cfg.auth?.profiles?.["azure-ai:default"]?.mode).toBe("api_key");
+      expect(cfg.agents?.defaults?.model?.primary).toBe("azure-ai/gpt-5.2");
+      await expectApiKeyProfile({
+        profileId: "azure-ai:default",
+        provider: "azure-ai",
+        key: "azure-ai-test-key",
+      });
+    });
+  }, 60_000);
+
   it("stores OpenAI API key and sets OpenAI default model", async () => {
     await withOnboardEnv("openclaw-onboard-openai-", async ({ configPath, runtime }) => {
       await runNonInteractive(

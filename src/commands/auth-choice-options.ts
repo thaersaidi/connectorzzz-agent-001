@@ -24,7 +24,8 @@ export type AuthChoiceGroupId =
   | "venice"
   | "qwen"
   | "qianfan"
-  | "xai";
+  | "xai"
+  | "azure-ai";
 
 export type AuthChoiceGroup = {
   value: AuthChoiceGroupId;
@@ -74,6 +75,12 @@ const AUTH_CHOICE_GROUP_DEFS: {
     label: "xAI (Grok)",
     hint: "API key",
     choices: ["xai-api-key"],
+  },
+  {
+    value: "azure-ai",
+    label: "Azure AI Foundry",
+    hint: "API key",
+    choices: ["azure-ai-api-key"],
   },
   {
     value: "openrouter",
@@ -163,6 +170,7 @@ export function buildAuthChoiceOptions(params: {
   options.push({ value: "chutes", label: "Chutes (OAuth)" });
   options.push({ value: "openai-api-key", label: "OpenAI API key" });
   options.push({ value: "xai-api-key", label: "xAI (Grok) API key" });
+  options.push({ value: "azure-ai-api-key", label: "Azure AI Foundry API key" });
   options.push({
     value: "qianfan-api-key",
     label: "Qianfan API key",

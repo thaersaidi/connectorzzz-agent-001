@@ -23,6 +23,7 @@ import {
   VENICE_MODEL_CATALOG,
 } from "../agents/venice-models.js";
 import {
+  AZURE_AI_DEFAULT_MODEL_REF,
   CLOUDFLARE_AI_GATEWAY_DEFAULT_MODEL_REF,
   OPENROUTER_DEFAULT_MODEL_REF,
   VERCEL_AI_GATEWAY_DEFAULT_MODEL_REF,
@@ -66,6 +67,34 @@ export function applyZaiConfig(cfg: OpenClawConfig): OpenClawConfig {
               }
             : undefined),
           primary: ZAI_DEFAULT_MODEL_REF,
+        },
+      },
+    },
+  };
+}
+
+export function applyAzureAiConfig(cfg: OpenClawConfig): OpenClawConfig {
+  const models = { ...cfg.agents?.defaults?.models };
+  models[AZURE_AI_DEFAULT_MODEL_REF] = {
+    ...models[AZURE_AI_DEFAULT_MODEL_REF],
+    alias: models[AZURE_AI_DEFAULT_MODEL_REF]?.alias ?? "Azure AI",
+  };
+
+  const existingModel = cfg.agents?.defaults?.model;
+  return {
+    ...cfg,
+    agents: {
+      ...cfg.agents,
+      defaults: {
+        ...cfg.agents?.defaults,
+        models,
+        model: {
+          ...(existingModel && "fallbacks" in (existingModel as Record<string, unknown>)
+            ? {
+                fallbacks: (existingModel as { fallbacks?: string[] }).fallbacks,
+              }
+            : undefined),
+          primary: AZURE_AI_DEFAULT_MODEL_REF,
         },
       },
     },

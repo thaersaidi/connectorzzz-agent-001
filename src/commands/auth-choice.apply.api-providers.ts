@@ -13,6 +13,7 @@ import {
 } from "./google-gemini-model-default.js";
 import {
   applyAuthProfileConfig,
+  applyAzureAiConfig,
   applyCloudflareAiGatewayConfig,
   applyCloudflareAiGatewayProviderConfig,
   applyQianfanConfig,
@@ -45,6 +46,8 @@ import {
   VENICE_DEFAULT_MODEL_REF,
   VERCEL_AI_GATEWAY_DEFAULT_MODEL_REF,
   XIAOMI_DEFAULT_MODEL_REF,
+  AZURE_AI_DEFAULT_MODEL_REF,
+  setAzureAiApiKey,
   setCloudflareAiGatewayConfig,
   setQianfanApiKey,
   setGeminiApiKey,
@@ -111,6 +114,60 @@ export async function applyAuthChoiceApiProviders(
     } else if (params.opts.tokenProvider === "qianfan") {
       authChoice = "qianfan-api-key";
     }
+  }
+
+  if (authChoice === "azure-ai-api-key") {
+    let hasCredential = false;
+
+    if (!hasCredential && params.opts?.token && params.opts?.tokenProvider === "azure-ai") {
+      setAzureAiApiKey(normalizeApiKeyInput(params.opts.token), params.agentDir);
+      hasCredential = true;
+    }
+
+    if (!hasCredential) {
+      const envKey = resolveEnvApiKey("azure-ai");
+      if (envKey) {
+        const useExisting = await params.prompter.confirm({
+          message: `Use existing AZURE_AI_API_KEY (${envKey.source}, ${formatApiKeyPreview(envKey.apiKey)})?`,
+          initialValue: true,
+        });
+        if (useExisting) {
+          setAzureAiApiKey(envKey.apiKey, params.agentDir);
+          hasCredential = true;
+        }
+      }
+    }
+
+    if (!hasCredential) {
+      const key = await params.prompter.text({
+        message: "Enter Azure AI API key",
+        validate: validateApiKeyInput,
+      });
+      setAzureAiApiKey(normalizeApiKeyInput(String(key)), params.agentDir);
+    }
+
+    nextConfig = applyAuthProfileConfig(nextConfig, {
+      profileId: "azure-ai:default",
+      provider: "azure-ai",
+      mode: "api_key",
+    });
+
+    {
+      const applied = await applyDefaultModelChoice({
+        config: nextConfig,
+        setDefaultModel: params.setDefaultModel,
+        defaultModel: AZURE_AI_DEFAULT_MODEL_REF,
+        applyDefaultConfig: applyAzureAiConfig,
+        applyProviderConfig: applyAzureAiConfig,
+        noteDefault: AZURE_AI_DEFAULT_MODEL_REF,
+        noteAgentModel,
+        prompter: params.prompter,
+      });
+      nextConfig = applied.config;
+      agentModelOverride = applied.agentModelOverride ?? agentModelOverride;
+    }
+
+    return { config: nextConfig, agentModelOverride };
   }
 
   if (authChoice === "openrouter-api-key") {

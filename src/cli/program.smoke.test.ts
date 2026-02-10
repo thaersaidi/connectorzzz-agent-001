@@ -181,6 +181,12 @@ describe("cli program (smoke)", () => {
         field: "moonshotApiKey",
       },
       {
+        authChoice: "azure-ai-api-key",
+        flag: "--azure-ai-api-key",
+        key: "azure-ai-test-key",
+        field: "azureAiApiKey",
+      },
+      {
         authChoice: "kimi-code-api-key",
         flag: "--kimi-code-api-key",
         key: "sk-kimi-code-test",

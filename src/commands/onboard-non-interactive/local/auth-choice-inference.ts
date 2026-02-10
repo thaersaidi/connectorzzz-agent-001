@@ -23,6 +23,7 @@ type AuthChoiceFlagOptions = Pick<
   | "minimaxApiKey"
   | "opencodeZenApiKey"
   | "xaiApiKey"
+  | "azureAiApiKey"
 >;
 
 const AUTH_CHOICE_FLAG_MAP = [
@@ -43,6 +44,7 @@ const AUTH_CHOICE_FLAG_MAP = [
   { flag: "zaiApiKey", authChoice: "zai-api-key", label: "--zai-api-key" },
   { flag: "xiaomiApiKey", authChoice: "xiaomi-api-key", label: "--xiaomi-api-key" },
   { flag: "xaiApiKey", authChoice: "xai-api-key", label: "--xai-api-key" },
+  { flag: "azureAiApiKey", authChoice: "azure-ai-api-key", label: "--azure-ai-api-key" },
   { flag: "minimaxApiKey", authChoice: "minimax-api", label: "--minimax-api-key" },
   { flag: "opencodeZenApiKey", authChoice: "opencode-zen", label: "--opencode-zen-api-key" },
 ] satisfies ReadonlyArray<AuthChoiceFlag>;

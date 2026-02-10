@@ -102,6 +102,20 @@ OpenClaw ships with the pi‑ai catalog. These providers require **no**
 - CLI: `openclaw onboard --auth-choice zai-api-key`
   - Aliases: `z.ai/*` and `z-ai/*` normalize to `zai/*`
 
+### Azure AI Foundry
+
+- Provider: `azure-ai`
+- Auth: `AZURE_AI_API_KEY`
+- Optional endpoint: `AZURE_AI_ENDPOINT`
+- Optional deployment override: `AZURE_AI_DEPLOYMENT`
+- Example model: `azure-ai/gpt-5.2`
+- Codex deployment example: `azure-ai/gpt-5.2-codex`
+- CLI: `openclaw onboard --auth-choice azure-ai-api-key`
+
+When using Azure AI Foundry project endpoints, set `AZURE_AI_ENDPOINT` to your
+project URL (for example `https://<resource>.services.ai.azure.com/api/projects/<project>`),
+then pick the deployment id via model ref or with `AZURE_AI_DEPLOYMENT`.
+
 ### Vercel AI Gateway
 
 - Provider: `vercel-ai-gateway`

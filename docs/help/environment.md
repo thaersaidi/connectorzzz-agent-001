@@ -56,6 +56,14 @@ Env var equivalents:
 - `OPENCLAW_LOAD_SHELL_ENV=1`
 - `OPENCLAW_SHELL_ENV_TIMEOUT_MS=15000`
 
+Provider-specific examples (non-exhaustive):
+
+- `OPENAI_API_KEY`
+- `ANTHROPIC_API_KEY`
+- `AZURE_AI_API_KEY`
+- `AZURE_AI_ENDPOINT`
+- `AZURE_AI_DEPLOYMENT`
+
 ## Env var substitution in config
 
 You can reference env vars directly in config string values using `${VAR_NAME}` syntax:
