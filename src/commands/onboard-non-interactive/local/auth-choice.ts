@@ -11,6 +11,7 @@ import { buildTokenProfileId, validateAnthropicSetupToken } from "../../auth-tok
 import { applyGoogleGeminiModelDefault } from "../../google-gemini-model-default.js";
 import {
   applyAuthProfileConfig,
+  applyAzureAiConfig,
   applyCloudflareAiGatewayConfig,
   applyQianfanConfig,
   applyKimiCodeConfig,
@@ -27,6 +28,7 @@ import {
   applyXiaomiConfig,
   applyZaiConfig,
   setAnthropicApiKey,
+  setAzureAiApiKey,
   setCloudflareAiGatewayConfig,
   setQianfanApiKey,
   setGeminiApiKey,
@@ -244,6 +246,29 @@ export async function applyNonInteractiveAuthChoice(params: {
       mode: "api_key",
     });
     return applyXaiConfig(nextConfig);
+  }
+
+  if (authChoice === "azure-ai-api-key") {
+    const resolved = await resolveNonInteractiveApiKey({
+      provider: "azure-ai",
+      cfg: baseConfig,
+      flagValue: opts.azureAiApiKey,
+      flagName: "--azure-ai-api-key",
+      envVar: "AZURE_AI_API_KEY",
+      runtime,
+    });
+    if (!resolved) {
+      return null;
+    }
+    if (resolved.source !== "profile") {
+      setAzureAiApiKey(resolved.key);
+    }
+    nextConfig = applyAuthProfileConfig(nextConfig, {
+      profileId: "azure-ai:default",
+      provider: "azure-ai",
+      mode: "api_key",
+    });
+    return applyAzureAiConfig(nextConfig);
   }
 
   if (authChoice === "qianfan-api-key") {
