@@ -120,3 +120,30 @@ export function buildXaiModelDefinition(): ModelDefinitionConfig {
     maxTokens: XAI_DEFAULT_MAX_TOKENS,
   };
 }
+
+// --------------- Azure AI Foundry ---------------
+export const AZURE_AI_DEFAULT_MODEL_ID = "gpt-5.2";
+export const AZURE_AI_DEFAULT_MODEL_REF = `azure-ai/${AZURE_AI_DEFAULT_MODEL_ID}`;
+export const AZURE_AI_DEFAULT_CONTEXT_WINDOW = 128000;
+export const AZURE_AI_DEFAULT_MAX_TOKENS = 16384;
+export const AZURE_AI_DEFAULT_COST = {
+  input: 0,
+  output: 0,
+  cacheRead: 0,
+  cacheWrite: 0,
+};
+
+export function buildAzureAiModelDefinition(
+  modelId: string = AZURE_AI_DEFAULT_MODEL_ID,
+): ModelDefinitionConfig {
+  return {
+    id: modelId,
+    name: `Azure AI ${modelId}`,
+    reasoning: false,
+    input: ["text", "image"],
+    cost: AZURE_AI_DEFAULT_COST,
+    contextWindow: AZURE_AI_DEFAULT_CONTEXT_WINDOW,
+    maxTokens: AZURE_AI_DEFAULT_MAX_TOKENS,
+    compat: { maxTokensField: "max_completion_tokens" },
+  };
+}

@@ -9,6 +9,7 @@ set -e
 #
 # Usage:
 #   export ACR_PASSWORD='<your-acr-admin-password>'
+#   export GATEWAY_TOKEN='<pick-a-strong-secret>'
 #   ./scripts/deploy-azure.sh
 # ==================================================================================
 
@@ -19,6 +20,7 @@ ACR_NAME="acrgenesismesh"
 ACR_SERVER="acrgenesismesh.azurecr.io"
 ACR_USER="acrgenesismesh"
 ACR_PASSWORD="${ACR_PASSWORD:?Set ACR_PASSWORD env var before running}"
+GATEWAY_TOKEN="${GATEWAY_TOKEN:?Set GATEWAY_TOKEN env var before running (required for --bind lan)}"
 
 CONTAINER_APP_NAME="ca-agent-001"
 ENV_NAME="cae-agents001gf4gd"
@@ -77,7 +79,7 @@ properties:
           memory: ${MEMORY/\.0/}
         command:
           - node
-          - dist/index.js
+          - openclaw.mjs
           - gateway
           - --allow-unconfigured
           - --bind
@@ -93,7 +95,12 @@ properties:
             value: /data
           - name: NODE_OPTIONS
             value: --max-old-space-size=1536
+          - name: OPENCLAW_GATEWAY_TOKEN
+            secretRef: gwtoken
 YAML
+  az containerapp secret set \
+    -n "$CONTAINER_APP_NAME" -g "$ENV_RESOURCE_GROUP" \
+    --secrets "gwtoken=${GATEWAY_TOKEN}" -o none 2>/dev/null || true
   az containerapp update \
     -n "$CONTAINER_APP_NAME" \
     -g "$ENV_RESOURCE_GROUP" \
@@ -116,11 +123,13 @@ else
     --cpu "$CPU" --memory "$MEMORY" \
     --min-replicas "$MIN_REPLICAS" \
     --max-replicas "$MAX_REPLICAS" \
+    --secrets "gwtoken=${GATEWAY_TOKEN}" \
     --env-vars \
       "NODE_ENV=production" \
       "OPENCLAW_PREFER_PNPM=1" \
       "OPENCLAW_STATE_DIR=/data" \
       "NODE_OPTIONS=--max-old-space-size=1536" \
+      "OPENCLAW_GATEWAY_TOKEN=secretref:gwtoken" \
     -o none
 
   # Immediately update with correct startup command via YAML
@@ -136,7 +145,7 @@ properties:
           memory: ${MEMORY/\.0/}
         command:
           - node
-          - dist/index.js
+          - openclaw.mjs
           - gateway
           - --allow-unconfigured
           - --bind
@@ -152,6 +161,8 @@ properties:
             value: /data
           - name: NODE_OPTIONS
             value: --max-old-space-size=1536
+          - name: OPENCLAW_GATEWAY_TOKEN
+            secretRef: gwtoken
 YAML
   az containerapp update \
     -n "$CONTAINER_APP_NAME" \
@@ -169,9 +180,9 @@ echo ""
 echo "=== Deployed ==="
 echo "URL: https://${FQDN}"
 echo ""
-echo "Set secrets:"
-echo "  az containerapp secret set -n $CONTAINER_APP_NAME -g $ENV_RESOURCE_GROUP --secrets gwtoken=<value>"
-echo "  az containerapp update -n $CONTAINER_APP_NAME -g $ENV_RESOURCE_GROUP --set-env-vars OPENCLAW_GATEWAY_TOKEN=secretref:gwtoken"
+echo "Gateway token was set from GATEWAY_TOKEN env var."
+echo "To rotate the secret:"
+echo "  az containerapp secret set -n $CONTAINER_APP_NAME -g $ENV_RESOURCE_GROUP --secrets gwtoken=<new-value>"
 echo ""
 echo "Tail logs:"
 echo "  az containerapp logs show -n $CONTAINER_APP_NAME -g $ENV_RESOURCE_GROUP --follow"

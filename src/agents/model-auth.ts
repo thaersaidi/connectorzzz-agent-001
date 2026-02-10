@@ -289,6 +289,7 @@ export function resolveEnvApiKey(provider: string): EnvApiKeyResult | null {
 
   const envMap: Record<string, string> = {
     openai: "OPENAI_API_KEY",
+    "azure-ai": "AZURE_AI_API_KEY",
     google: "GEMINI_API_KEY",
     voyage: "VOYAGE_API_KEY",
     groq: "GROQ_API_KEY",

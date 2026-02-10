@@ -115,6 +115,7 @@ export async function setVeniceApiKey(key: string, agentDir?: string) {
   });
 }
 
+export const AZURE_AI_DEFAULT_MODEL_REF = "azure-ai/gpt-5.2";
 export const ZAI_DEFAULT_MODEL_REF = "zai/glm-4.7";
 export const XIAOMI_DEFAULT_MODEL_REF = "xiaomi/mimo-v2-flash";
 export const OPENROUTER_DEFAULT_MODEL_REF = "openrouter/auto";
@@ -223,6 +224,18 @@ export function setXaiApiKey(key: string, agentDir?: string) {
     credential: {
       type: "api_key",
       provider: "xai",
+      key,
+    },
+    agentDir: resolveAuthAgentDir(agentDir),
+  });
+}
+
+export function setAzureAiApiKey(key: string, agentDir?: string) {
+  upsertAuthProfile({
+    profileId: "azure-ai:default",
+    credential: {
+      type: "api_key",
+      provider: "azure-ai",
       key,
     },
     agentDir: resolveAuthAgentDir(agentDir),

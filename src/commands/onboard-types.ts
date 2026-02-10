@@ -36,6 +36,7 @@ export type AuthChoice =
   | "copilot-proxy"
   | "qwen-portal"
   | "xai-api-key"
+  | "azure-ai-api-key"
   | "qianfan-api-key"
   | "skip";
 export type GatewayAuthChoice = "token" | "password";
@@ -82,6 +83,11 @@ export type OnboardOptions = {
   veniceApiKey?: string;
   opencodeZenApiKey?: string;
   xaiApiKey?: string;
+  azureAiApiKey?: string;
+  /** Azure AI Foundry endpoint URL (e.g. https://<resource>.services.ai.azure.com). */
+  azureAiEndpoint?: string;
+  /** Azure AI deployment name (e.g. gpt-5.2). */
+  azureAiDeployment?: string;
   qianfanApiKey?: string;
   gatewayPort?: number;
   gatewayBind?: GatewayBind;
