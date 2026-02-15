@@ -40,7 +40,16 @@ function isDisabledByEnv() {
 
 function safeServiceName(name: string) {
   const trimmed = name.trim();
-  return trimmed.length > 0 ? trimmed : "OpenClaw";
+  let safe = trimmed.length > 0 ? trimmed : "OpenClaw";
+
+  // RFC 1035: labels limited to 63 octets.
+  // We truncate from the end to satisfy the limit.
+  while (Buffer.byteLength(safe) > 63) {
+    if (safe.length === 0) break;
+    safe = safe.substring(0, safe.length - 1);
+  }
+
+  return safe;
 }
 
 function prettifyInstanceName(name: string) {
