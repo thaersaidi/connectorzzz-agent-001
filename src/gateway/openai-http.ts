@@ -274,6 +274,27 @@ export async function handleOpenAiHttpRequest(
   let sawAssistantDelta = false;
   let closed = false;
 
+  // Send periodic SSE comments to keep the connection alive through
+  // load balancers and reverse proxies (e.g. Azure Container Apps has
+  // a ~240 s idle timeout).  A comment every 15 s is invisible to
+  // OpenAI-compatible clients but resets the idle timer.
+  const SSE_KEEPALIVE_INTERVAL_MS = 15_000;
+  const keepAliveTimer = setInterval(() => {
+    if (!closed) {
+      res.write(": keepalive\n\n");
+    }
+  }, SSE_KEEPALIVE_INTERVAL_MS);
+
+  const cleanup = () => {
+    if (!closed) {
+      closed = true;
+      clearInterval(keepAliveTimer);
+      unsubscribe();
+      writeDone(res);
+      res.end();
+    }
+  };
+
   const unsubscribe = onAgentEvent((evt) => {
     if (evt.runId !== runId) {
       return;
@@ -321,17 +342,17 @@ export async function handleOpenAiHttpRequest(
     if (evt.stream === "lifecycle") {
       const phase = evt.data?.phase;
       if (phase === "end" || phase === "error") {
-        closed = true;
-        unsubscribe();
-        writeDone(res);
-        res.end();
+        cleanup();
       }
     }
   });
 
   req.on("close", () => {
-    closed = true;
-    unsubscribe();
+    if (!closed) {
+      closed = true;
+      clearInterval(keepAliveTimer);
+      unsubscribe();
+    }
   });
 
   void (async () => {
@@ -413,12 +434,7 @@ export async function handleOpenAiHttpRequest(
         data: { phase: "error" },
       });
     } finally {
-      if (!closed) {
-        closed = true;
-        unsubscribe();
-        writeDone(res);
-        res.end();
-      }
+      cleanup();
     }
   })();
 

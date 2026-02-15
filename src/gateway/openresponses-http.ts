@@ -608,6 +608,17 @@ export async function handleOpenResponsesHttpRequest(
   let finalUsage: Usage | undefined;
   let finalizeRequested: { status: ResponseResource["status"]; text: string } | null = null;
 
+  // Send periodic SSE comments to keep the connection alive through
+  // load balancers and reverse proxies (e.g. Azure Container Apps has
+  // a ~240 s idle timeout).  A comment every 15 s is invisible to
+  // OpenAI-compatible clients but resets the idle timer.
+  const SSE_KEEPALIVE_INTERVAL_MS = 15_000;
+  const keepAliveTimer = setInterval(() => {
+    if (!closed) {
+      res.write(": keepalive\n\n");
+    }
+  }, SSE_KEEPALIVE_INTERVAL_MS);
+
   const maybeFinalize = () => {
     if (closed) {
       return;
@@ -621,6 +632,7 @@ export async function handleOpenResponsesHttpRequest(
     const usage = finalUsage;
 
     closed = true;
+    clearInterval(keepAliveTimer);
     unsubscribe();
 
     writeSseEvent(res, {
@@ -745,8 +757,11 @@ export async function handleOpenResponsesHttpRequest(
   });
 
   req.on("close", () => {
-    closed = true;
-    unsubscribe();
+    if (!closed) {
+      closed = true;
+      clearInterval(keepAliveTimer);
+      unsubscribe();
+    }
   });
 
   void (async () => {
@@ -851,6 +866,7 @@ export async function handleOpenResponsesHttpRequest(
             usage,
           });
           closed = true;
+          clearInterval(keepAliveTimer);
           unsubscribe();
           writeSseEvent(res, { type: "response.completed", response: incompleteResponse });
           writeDone(res);
@@ -900,13 +916,15 @@ export async function handleOpenResponsesHttpRequest(
       });
     } finally {
       if (!closed) {
-        // Emit lifecycle end to trigger completion
+        // Emit lifecycle end to trigger completion via maybeFinalize
         emitAgentEvent({
           runId: responseId,
           stream: "lifecycle",
           data: { phase: "end" },
         });
       }
+      // Safety: ensure keepalive timer is always cleaned up
+      clearInterval(keepAliveTimer);
     }
   })();
 
