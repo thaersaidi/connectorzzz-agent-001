@@ -1,3 +1,4 @@
+import type { OpenClawConfig } from "../config/config.js";
 import type { ApplyAuthChoiceParams, ApplyAuthChoiceResult } from "./auth-choice.apply.js";
 import { ensureAuthProfileStore, resolveAuthProfileOrder } from "../agents/auth-profiles.js";
 import { resolveEnvApiKey } from "../agents/model-auth.js";
@@ -146,6 +147,35 @@ export async function applyAuthChoiceApiProviders(
       setAzureAiApiKey(normalizeApiKeyInput(String(key)), params.agentDir);
     }
 
+    // Resolve Azure OpenAI endpoint URL from CLI opts, env var, or prompt.
+    let azureBaseUrl: string | undefined = params.opts?.azureAiEndpoint?.trim() || undefined;
+    if (!azureBaseUrl) {
+      const envUrl = (
+        process.env.AZURE_OPENAI_BASE_URL ??
+        process.env.AZURE_AI_ENDPOINT ??
+        ""
+      ).trim();
+      if (envUrl) {
+        azureBaseUrl = envUrl;
+      }
+    }
+    if (!azureBaseUrl) {
+      const url = await params.prompter.text({
+        message: "Enter Azure OpenAI endpoint URL (e.g. https://<resource>.openai.azure.com)",
+        validate: (value: string) => {
+          const trimmed = (value ?? "").trim();
+          if (!trimmed) {
+            return "Endpoint URL is required for Azure OpenAI";
+          }
+          if (!trimmed.startsWith("https://") && !trimmed.startsWith("http://")) {
+            return "Endpoint URL must start with https://";
+          }
+          return undefined;
+        },
+      });
+      azureBaseUrl = String(url).trim();
+    }
+
     nextConfig = applyAuthProfileConfig(nextConfig, {
       profileId: "azure-ai:default",
       provider: "azure-ai",
@@ -153,12 +183,14 @@ export async function applyAuthChoiceApiProviders(
     });
 
     {
+      const applyWithBaseUrl = (cfg: OpenClawConfig) =>
+        applyAzureAiConfig(cfg, { baseUrl: azureBaseUrl });
       const applied = await applyDefaultModelChoice({
         config: nextConfig,
         setDefaultModel: params.setDefaultModel,
         defaultModel: AZURE_AI_DEFAULT_MODEL_REF,
-        applyDefaultConfig: applyAzureAiConfig,
-        applyProviderConfig: applyAzureAiConfig,
+        applyDefaultConfig: applyWithBaseUrl,
+        applyProviderConfig: applyWithBaseUrl,
         noteDefault: AZURE_AI_DEFAULT_MODEL_REF,
         noteAgentModel,
         prompter: params.prompter,

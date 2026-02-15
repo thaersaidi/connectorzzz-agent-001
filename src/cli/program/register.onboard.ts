@@ -88,6 +88,7 @@ export function registerOnboardCommand(program: Command) {
     .option("--opencode-zen-api-key <key>", "OpenCode Zen API key")
     .option("--xai-api-key <key>", "xAI API key")
     .option("--azure-ai-api-key <key>", "Azure AI API key")
+    .option("--azure-ai-endpoint <url>", "Azure OpenAI endpoint URL")
     .option("--qianfan-api-key <key>", "QIANFAN API key")
     .option("--gateway-port <port>", "Gateway port")
     .option("--gateway-bind <mode>", "Gateway bind: loopback|tailnet|lan|auto|custom")
@@ -146,6 +147,7 @@ export function registerOnboardCommand(program: Command) {
             opencodeZenApiKey: opts.opencodeZenApiKey as string | undefined,
             xaiApiKey: opts.xaiApiKey as string | undefined,
             azureAiApiKey: opts.azureAiApiKey as string | undefined,
+            azureAiEndpoint: opts.azureAiEndpoint as string | undefined,
             gatewayPort:
               typeof gatewayPort === "number" && Number.isFinite(gatewayPort)
                 ? gatewayPort

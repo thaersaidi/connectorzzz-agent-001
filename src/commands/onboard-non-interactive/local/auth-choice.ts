@@ -263,12 +263,17 @@ export async function applyNonInteractiveAuthChoice(params: {
     if (resolved.source !== "profile") {
       setAzureAiApiKey(resolved.key);
     }
+    const azureBaseUrl =
+      opts.azureAiEndpoint?.trim() ||
+      process.env.AZURE_OPENAI_BASE_URL?.trim() ||
+      process.env.AZURE_AI_ENDPOINT?.trim() ||
+      undefined;
     nextConfig = applyAuthProfileConfig(nextConfig, {
       profileId: "azure-ai:default",
       provider: "azure-ai",
       mode: "api_key",
     });
-    return applyAzureAiConfig(nextConfig);
+    return applyAzureAiConfig(nextConfig, { baseUrl: azureBaseUrl });
   }
 
   if (authChoice === "qianfan-api-key") {

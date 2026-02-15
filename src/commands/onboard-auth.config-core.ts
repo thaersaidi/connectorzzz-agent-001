@@ -32,6 +32,7 @@ import {
   XAI_DEFAULT_MODEL_REF,
 } from "./onboard-auth.credentials.js";
 import {
+  buildAzureAiModelDefinition,
   buildMoonshotModelDefinition,
   buildXaiModelDefinition,
   QIANFAN_BASE_URL,
@@ -73,11 +74,45 @@ export function applyZaiConfig(cfg: OpenClawConfig): OpenClawConfig {
   };
 }
 
-export function applyAzureAiConfig(cfg: OpenClawConfig): OpenClawConfig {
+export function applyAzureAiConfig(
+  cfg: OpenClawConfig,
+  params?: { baseUrl?: string },
+): OpenClawConfig {
   const models = { ...cfg.agents?.defaults?.models };
   models[AZURE_AI_DEFAULT_MODEL_REF] = {
     ...models[AZURE_AI_DEFAULT_MODEL_REF],
     alias: models[AZURE_AI_DEFAULT_MODEL_REF]?.alias ?? "Azure AI",
+  };
+
+  const providers = { ...cfg.models?.providers };
+  const existingProvider = providers["azure-ai"];
+  const existingModels = Array.isArray(existingProvider?.models) ? existingProvider.models : [];
+  const defaultModel = buildAzureAiModelDefinition();
+  const hasDefaultModel = existingModels.some((model) => model.id === defaultModel.id);
+  const mergedModels = hasDefaultModel ? existingModels : [...existingModels, defaultModel];
+  // Azure OpenAI needs a baseUrl.  Fall back to the env var so the provider
+  // entry can be written to config.json.  The pi-ai library also reads
+  // AZURE_OPENAI_BASE_URL / AZURE_OPENAI_RESOURCE_NAME from the environment
+  // at runtime when the config value is a placeholder.
+  const baseUrl =
+    params?.baseUrl ||
+    existingProvider?.baseUrl ||
+    process.env.AZURE_OPENAI_BASE_URL?.trim() ||
+    process.env.AZURE_AI_ENDPOINT?.trim() ||
+    "https://REPLACE_ME.openai.azure.com";
+
+  const { apiKey: existingApiKey, ...existingProviderRest } = (existingProvider ?? {}) as Record<
+    string,
+    unknown
+  > as { apiKey?: string };
+  const resolvedApiKey = typeof existingApiKey === "string" ? existingApiKey : undefined;
+  const normalizedApiKey = resolvedApiKey?.trim();
+  providers["azure-ai"] = {
+    ...existingProviderRest,
+    baseUrl,
+    api: "azure-openai-responses",
+    ...(normalizedApiKey ? { apiKey: normalizedApiKey } : {}),
+    models: mergedModels.length > 0 ? mergedModels : [defaultModel],
   };
 
   const existingModel = cfg.agents?.defaults?.model;
@@ -97,6 +132,10 @@ export function applyAzureAiConfig(cfg: OpenClawConfig): OpenClawConfig {
           primary: AZURE_AI_DEFAULT_MODEL_REF,
         },
       },
+    },
+    models: {
+      mode: cfg.models?.mode ?? "merge",
+      providers,
     },
   };
 }
